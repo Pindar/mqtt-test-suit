@@ -12,6 +12,7 @@ Publisher gives the ability to publish *one* message to the broker. It allows to
 retain message, QoS, etc. (see the help running the command without any parameters)
 
 Example:
+
     java -cp mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar com.tado.mqtt.suite.cli.Publisher -h "tcp://localhost:61613" -t "test/topic" -m "Test message"
 
 ### Concurrent Publishers
@@ -22,12 +23,14 @@ and it adds few more additional:
 * `--client-sleep` : the number of milliseconds to sleep between publish operations (defaut: 0).
 
 Example:
+
     java -cp mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar com.tado.mqtt.suite.cli.Publishers -h "tcp://localhost:61613" -t "test/topic" -m "Test message" --client-count 5000 --msg-count 1 -pc --will-topic "dead/topic" --will-payload "I am dead, sorry"
 
 ### Subscriber
 The subscriber is capable to subscribe for certain topic.
 
 Example:
+
     java -cp mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar com.tado.mqtt.suite.cli.Listener -h "tcp://localhost:61613" -t "test/topic"
 
 ## Enhancements
@@ -42,4 +45,5 @@ number in OS X, however it could be a good starting point for all unix systems.
 
 ### Increase Heap Space
 To increase the memory used by the java process we need to set the heap space size:
+
     java -Xmx1024m -cp mqtt-tes...
