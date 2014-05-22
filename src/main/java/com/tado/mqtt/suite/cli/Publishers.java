@@ -1,13 +1,12 @@
 package com.tado.mqtt.suite.cli;
 
-import com.tado.mqtt.suite.client.Clients;
+import com.tado.mqtt.suite.client.PublishClients;
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.UTF8Buffer;
 import org.fusesource.mqtt.client.QoS;
 
 import java.io.File;
 import java.io.RandomAccessFile;
-import java.net.SocketException;
 import java.util.Arrays;
 import java.util.LinkedList;
 
@@ -16,7 +15,7 @@ import java.util.LinkedList;
  */
 public class Publishers {
 
-    private final Clients clients = new Clients();
+    private final PublishClients publishClients = new PublishClients();
 
     private static void displayHelpAndExit(int exitCode) {
         stdout("");
@@ -49,7 +48,7 @@ public class Publishers {
         stdout(" -f : send the contents of a file as the message.");
         stdout(" -pc : prefix a message counter to the message together with client number");
         stdout(" -v : MQTT version to use 3.1 or 3.1.1. (default: 3.1)");
-        stdout(" --client-count : the number of simultaneously connected clients");
+        stdout(" --client-count : the number of simultaneously connected publishClients");
         stdout(" --msg-count : the number of messages to publish per client");
         stdout(" --client-sleep : the number of milliseconds to sleep between publish operations (defaut: 0)");
         stdout("");
@@ -82,55 +81,55 @@ public class Publishers {
                 if ("--help".equals(arg)) {
                     displayHelpAndExit(0);
                 } else if ("-v".equals(arg)) {
-                    main.clients.getMqtt().setVersion(shift(argl));
+                    main.publishClients.getMqtt().setVersion(shift(argl));
                 } else if ("-h".equals(arg)) {
-                    main.clients.getMqtt().setHost(shift(argl));
+                    main.publishClients.getMqtt().setHost(shift(argl));
                 } else if ("-k".equals(arg)) {
-                    main.clients.getMqtt().setKeepAlive(Short.parseShort(shift(argl)));
+                    main.publishClients.getMqtt().setKeepAlive(Short.parseShort(shift(argl)));
                 } else if ("-c".equals(arg)) {
-                    main.clients.getMqtt().setCleanSession(false);
+                    main.publishClients.getMqtt().setCleanSession(false);
                 } else if ("-i".equals(arg)) {
-                    main.clients.getMqtt().setClientId(shift(argl));
+                    main.publishClients.getMqtt().setClientId(shift(argl));
                 } else if ("-u".equals(arg)) {
-                    main.clients.getMqtt().setUserName(shift(argl));
+                    main.publishClients.getMqtt().setUserName(shift(argl));
                 } else if ("-p".equals(arg)) {
-                    main.clients.getMqtt().setPassword(shift(argl));
+                    main.publishClients.getMqtt().setPassword(shift(argl));
                 } else if ("--will-topic".equals(arg)) {
-                    main.clients.getMqtt().setWillTopic(shift(argl));
+                    main.publishClients.getMqtt().setWillTopic(shift(argl));
                 } else if ("--will-payload".equals(arg)) {
-                    main.clients.getMqtt().setWillMessage(shift(argl));
+                    main.publishClients.getMqtt().setWillMessage(shift(argl));
                 } else if ("--will-qos".equals(arg)) {
                     int v = Integer.parseInt(shift(argl));
                     if( v > QoS.values().length ) {
                         stderr("Invalid qos value : " + v);
                         displayHelpAndExit(1);
                     }
-                    main.clients.getMqtt().setWillQos(QoS.values()[v]);
+                    main.publishClients.getMqtt().setWillQos(QoS.values()[v]);
                 } else if ("--will-retain".equals(arg)) {
-                    main.clients.getMqtt().setWillRetain(true);
+                    main.publishClients.getMqtt().setWillRetain(true);
                 } else if ("-d".equals(arg)) {
-                    main.clients.setDebug(true);
+                    main.publishClients.setDebug(true);
                 } else if ("--client-count".equals(arg)) {
-                    main.clients.setClientCount(Integer.parseInt(shift(argl)));
+                    main.publishClients.setClientCount(Integer.parseInt(shift(argl)));
                 } else if ("--msg-count".equals(arg)) {
-                    main.clients.setMessageCountPerClient(Long.parseLong(shift(argl)));
+                    main.publishClients.setMessageCountPerClient(Long.parseLong(shift(argl)));
                 } else if ("--client-sleep".equals(arg)) {
-                    main.clients.setSleep(Long.parseLong(shift(argl)));
+                    main.publishClients.setSleep(Long.parseLong(shift(argl)));
                 } else if ("-q".equals(arg)) {
                     int v = Integer.parseInt(shift(argl));
                     if( v > QoS.values().length ) {
                         stderr("Invalid qos value : " + v);
                         displayHelpAndExit(1);
                     }
-                    main.clients.setQos(QoS.values()[v]);
+                    main.publishClients.setQos(QoS.values()[v]);
                 } else if ("-r".equals(arg)) {
-                    main.clients.setRetain(true);
+                    main.publishClients.setRetain(true);
                 } else if ("-t".equals(arg)) {
-                    main.clients.setTopic(new UTF8Buffer(shift(argl)));
+                    main.publishClients.setTopic(new UTF8Buffer(shift(argl)));
                 } else if ("-m".equals(arg)) {
-                    main.clients.setBody(new UTF8Buffer(shift(argl)+"\n"));
+                    main.publishClients.setBody(new UTF8Buffer(shift(argl)+"\n"));
                 } else if ("-z".equals(arg)) {
-                    main.clients.setBody(new UTF8Buffer(""));
+                    main.publishClients.setBody(new UTF8Buffer(""));
                 } else if ("-f".equals(arg)) {
                     File file = new File(shift(argl));
                     RandomAccessFile raf = new RandomAccessFile(file, "r");
@@ -138,12 +137,12 @@ public class Publishers {
                         byte data[] = new byte[(int) raf.length()];
                         raf.seek(0);
                         raf.readFully(data);
-                        main.clients.setBody(new Buffer(data));
+                        main.publishClients.setBody(new Buffer(data));
                     } finally {
                         raf.close();
                     }
                 } else if ("-pc".equals(arg)) {
-                    main.clients.setPrefixCounter(true);
+                    main.publishClients.setPrefixCounter(true);
                 } else {
                     stderr("Invalid usage: unknown option: " + arg);
                     displayHelpAndExit(1);
@@ -154,11 +153,11 @@ public class Publishers {
             }
         }
 
-        if (main.clients.getTopic() == null) {
+        if (main.publishClients.getTopic() == null) {
             stderr("Invalid usage: no topic specified.");
             displayHelpAndExit(1);
         }
-        if (main.clients.getBody() == null) {
+        if (main.publishClients.getBody() == null) {
             stderr("Invalid usage: -z -m or -f must be specified.");
             displayHelpAndExit(1);
         }
@@ -173,12 +172,12 @@ public class Publishers {
             @Override
             public void run() {
                 stdout("");
-                stdout("MQTT clients shutdown...");
-                clients.interrupt();
+                stdout("MQTT publishClients shutdown...");
+                publishClients.interrupt();
             }
         });
 
         // execute client calls
-        clients.execute();
+        publishClients.execute();
     }
 }

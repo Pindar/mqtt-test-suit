@@ -28,7 +28,7 @@ Example:
 The subscriber is capable to subscribe for certain topic.
 
 Example:
-    java -cp mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar com.tado.mqtt.suite.cli.Listener -h "tcp://localhost:61613" -t "test/topic"
+    java -cp mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar com.tado.mqtt.suite.cli.Subscriber -h "tcp://localhost:61613" -t "test/topic"
 
 ## Enhancements
 In order to be able to create huge amount of simultaneously connected clients on one machine, you need to adjust

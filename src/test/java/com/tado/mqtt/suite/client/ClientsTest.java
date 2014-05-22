@@ -17,7 +17,7 @@ public class ClientsTest {
     @Test
     public void testExecute() {
         // set clients
-//        Clients clients = new Clients();
+//        PublishClients clients = new PublishClients();
 //        try {
 //            clients.getMqtt().setHost("tcp://localhost:61613");
 //        } catch (URISyntaxException e) {

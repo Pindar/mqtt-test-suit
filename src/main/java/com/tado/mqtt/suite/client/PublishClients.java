@@ -19,7 +19,7 @@ import static org.fusesource.hawtdispatch.Dispatch.createQueue;
 /**
  * Created by kuceram on 19/05/14.
  */
-public class Clients {
+public class PublishClients {
 
     private MQTT mqtt = new MQTT();
     private QoS qos = QoS.AT_MOST_ONCE;
