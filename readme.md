@@ -5,7 +5,8 @@ MQTT clients - publishers and subscribers. This project adds the ability to run 
 connected clients publishing messages to a broker. This simulates the real load on the broker.
 
 ## Usage
-Download [executable jar file](https://github.com/tadodotcom/mqtt-test-suit/releases) and run the clients from command line.
+Download [executable jar file](https://github.com/tadodotcom/mqtt-test-suit/releases) and run the clients from command
+line.
 
 Run this command for getting help:
     java -cp mqtt mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar com.tado.mqtt.suite.cli.Publishers
