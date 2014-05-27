@@ -27,7 +27,7 @@ public class ClientPublishTask extends Task {
     private QoS qos = QoS.AT_MOST_ONCE;
     private int messageCount = 1;
     private long sleep = 0;
-    private Callback<Void> publishCallback;
+    private Callback<Integer> publishCallback;
     private Callback<Void> connectionCallback;
     private final CallbackConnection connection;
 
@@ -118,7 +118,7 @@ public class ClientPublishTask extends Task {
         this.sleep = sleep;
     }
 
-    public Callback<Void> getPublishCallback() {
+    public Callback<Integer> getPublishCallback() {
         return publishCallback;
     }
 
@@ -130,7 +130,7 @@ public class ClientPublishTask extends Task {
         this.connectionCallback = connectionCallback;
     }
 
-    public void setPublishCallback(Callback<Void> publishCallback) {
+    public void setPublishCallback(Callback<Integer> publishCallback) {
         this.publishCallback = publishCallback;
     }
 
@@ -152,6 +152,7 @@ public class ClientPublishTask extends Task {
                         @Override
                         public void run() {
                             if (!interruped) {
+                                final int messageSize;
                                 Buffer message = body;
 
                                 if (debug) {
@@ -165,12 +166,13 @@ public class ClientPublishTask extends Task {
                                     os.write(body);
                                     message = os.toBuffer();
                                 }
+                                messageSize = message.length;
                                 connection.publish(topic, message, qos, retain, new Callback<Void>() {
                                     public void onSuccess(Void value) {
                                         if (debug) {
                                             System.out.println(String.format("[client %s] publish message id %d - sent", clientId, messagePosition));
                                         }
-                                        publishCallback.onSuccess(null);
+                                        publishCallback.onSuccess(messageSize);
                                     }
 
                                     public void onFailure(Throwable value) {
@@ -207,10 +209,6 @@ public class ClientPublishTask extends Task {
 
     public void interrupt(Callback<Void> callback) {
         interruped = true;
-        connection.disconnect(callback);
-    }
-
-    public void disconnect(Callback<Void> callback) {
         connection.disconnect(callback);
     }
 }

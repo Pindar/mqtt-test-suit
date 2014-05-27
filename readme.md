@@ -13,7 +13,8 @@ Run this command for getting help:
 ### Publishers
 Publishers give the ability to publish one or more messages with one or more mqtt clients to the broker. It allows
 to specify different MQTT variables like retain message, QoS, etc. (see the help running the command without
-any parameters). Concurrent publishers allow to publish messages by multiple clients.
+any parameters). Concurrent publishers allow to publish messages by multiple clients. During the whole test all
+created MQTT (TCP/IP) connections are hold - they are closed in the end of the test.
 
 Example:
     java -cp mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar com.tado.mqtt.suite.cli.Publishers -h "tcp://localhost:1883" -t "test/topic" -m "Test message" --client-count 5000 --msg-count 1 -pc --will-topic "dead/topic" --will-payload "I am dead, sorry"
@@ -37,3 +38,6 @@ number in OS X, however it could be a good starting point for all unix systems.
 ### Increase Heap Space
 To increase the memory used by the java process we need to set the heap space size:
     java -Xmx1024m -cp mqtt-tes...
+
+## TODO
+ - Enable the user to choose if he wants to close the MQTT (TCP/IP) connection after a client task is executed.

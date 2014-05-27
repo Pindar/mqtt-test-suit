@@ -1,10 +1,13 @@
 package com.tado.mqtt.suite.cli;
 
 import com.tado.mqtt.suite.client.ClientPublishTask;
+import org.apache.commons.io.FileUtils;
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.UTF8Buffer;
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.mqtt.client.*;
+import org.joda.time.format.PeriodFormat;
+import org.joda.time.Period;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -12,6 +15,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.fusesource.hawtdispatch.Dispatch.createQueue;
 
@@ -30,6 +36,12 @@ public class Publishers {
     private int messageCount = 1;
     private long sleep;
     private int clientCount = 1;
+
+    private AtomicInteger messagesSent = new AtomicInteger(0);
+    private AtomicInteger errorMessages = new AtomicInteger(0);
+    private AtomicInteger errorConnections = new AtomicInteger(0);
+    private AtomicLong size = new AtomicLong(0);
+    private long startTimeNanosec;
 
     private static void displayHelpAndExit(int exitCode) {
         stdout("");
@@ -69,6 +81,24 @@ public class Publishers {
         System.exit(exitCode);
     }
 
+    private void displayStatistics() {
+        Period executionTime = new Period(startTimeNanosec/1000000, System.nanoTime()/1000000);
+        stdout("");
+        stdout("------------------------------------------");
+        stdout("Statistic of Publishers");
+        stdout("------------------------------------------");
+        stdout("Messages successfully sent: " + messagesSent.toString());
+        stdout("Total time elapsed: " + PeriodFormat.getDefault().print(executionTime));
+        stdout("Message rate: " + (messagesSent.get() / executionTime.toStandardSeconds().getSeconds()) + " msg/sec");
+        stdout("------------------------------------------");
+        stdout("Clients could not connect (failure): " + errorConnections.toString());
+        stdout("Messages could not publish (failure): " + errorMessages.toString());
+        stdout("------------------------------------------");
+        stdout("Total data sent: " + FileUtils.byteCountToDisplaySize(size.get()));
+        stdout("------------------------------------------");
+        stdout("");
+    }
+
     private static void stdout(Object x) {
         System.out.println(x);
     }
@@ -76,12 +106,12 @@ public class Publishers {
         System.err.println(x);
     }
 
-    private static String shift(LinkedList<String> argl) {
-        if(argl.isEmpty()) {
+    private static String shift(LinkedList<String> args) {
+        if(args.isEmpty()) {
             stderr("Invalid usage: Missing argument");
             displayHelpAndExit(1);
         }
-        return argl.removeFirst();
+        return args.removeFirst();
     }
 
     public static void main(String[] args) throws Exception {
@@ -181,7 +211,9 @@ public class Publishers {
     }
 
     private void execute() {
-        // each client has its own thread and each message is sent in a sepparate thread
+        startTimeNanosec = System.nanoTime();
+
+        // each client has its own thread and each message is sent in a separate thread
         final CountDownLatch done = new CountDownLatch(clientCount * messageCount);
         DispatchQueue queue = createQueue("mqtt clients queue");
         final ArrayList<ClientPublishTask> clients = new ArrayList<ClientPublishTask>();
@@ -192,22 +224,39 @@ public class Publishers {
             public void run() {
                 stdout("");
                 stdout("MQTT publishClients shutdown...");
-                for(ClientPublishTask client : clients)
+
+                final CountDownLatch clientClosed = new CountDownLatch(clients.size());
+                for(ClientPublishTask client : clients) {
                     client.interrupt(new Callback<Void>() {
                         @Override
                         public void onSuccess(Void value) {
+                            clientClosed.countDown();
+                            if(debug)
+                                stdout("Connection to broker successfully closed");
                         }
 
                         @Override
                         public void onFailure(Throwable value) {
+                            clientClosed.countDown();
+                            stderr("Connection close to broker failure!");
                         }
                     });
+                }
+
+                try {
+                    clientClosed.await(5000, TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                displayStatistics();
             }
         });
 
         // create clients and send the messages
         for (int i=0; i<clientCount; i++) {
             ClientPublishTask clientPublishTask = new ClientPublishTask(mqtt);
+            clients.add(clientPublishTask);
 
             // set client options
             clientPublishTask.setTopic(topic);
@@ -219,14 +268,17 @@ public class Publishers {
             clientPublishTask.setMessageCount(messageCount);
             clientPublishTask.setSleep(sleep);
             clientPublishTask.setClientId(Integer.toString(i));
-            clientPublishTask.setPublishCallback(new Callback<Void>() {
+            clientPublishTask.setPublishCallback(new Callback<Integer>() {
                 @Override
-                public void onSuccess(Void value) {
+                public void onSuccess(Integer messageSize) {
+                    messagesSent.incrementAndGet();
+                    size.addAndGet(new Long(messageSize));
                     done.countDown();
                 }
 
                 @Override
                 public void onFailure(Throwable value) {
+                    errorMessages.incrementAndGet();
                     done.countDown();
                 }
             });
@@ -237,6 +289,7 @@ public class Publishers {
 
                 @Override
                 public void onFailure(Throwable value) {
+                    errorConnections.incrementAndGet();
                     for(int i=0; i<messageCount; i++) {
                         done.countDown(); // discount all client messages if any failure
                     }
