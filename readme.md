@@ -11,7 +11,6 @@ line.
 Run this command for getting help:
     java -cp mqtt mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar com.tado.mqtt.suite.cli.Publishers
 
-<<<<<<< HEAD
 ### Publishers
 Publishers give the ability to publish one or more messages with one or more mqtt clients to the broker. It allows
 to specify different MQTT variables like retain message, QoS, etc. (see the help running the command without
