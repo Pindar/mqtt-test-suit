@@ -7,22 +7,16 @@ connected clients publishing messages to a broker. This simulates the real load 
 ## Usage
 Download [executable jar file](TODO) and run the clients from command line.
 
-### Publisher
-Publisher gives the ability to publish *one* message to the broker. It allows to specify different MQTT variables like
-retain message, QoS, etc. (see the help running the command without any parameters)
+Run this command for getting help:
+    java -cp mqtt mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar com.tado.mqtt.suite.cli.Publishers
+
+### Publishers
+Publishers give the ability to publish one or more messages with one or more mqtt clients to the broker. It allows
+to specify different MQTT variables like retain message, QoS, etc. (see the help running the command without
+any parameters). Concurrent publishers allow to publish messages by multiple clients.
 
 Example:
-    java -cp mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar com.tado.mqtt.suite.cli.Publisher -h "tcp://localhost:61613" -t "test/topic" -m "Test message"
-
-### Concurrent Publishers
-Concurrent publishers allow to publish messages by multiple clients. It has the same options as publisher (see above)
-and it adds few more additional:
-* `--client-count` : Sets the amount of clients who are going to publish.
-* `--msg-count` : Sets the amount of messages each client is going to send.
-* `--client-sleep` : the number of milliseconds to sleep between publish operations (defaut: 0).
-
-Example:
-    java -cp mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar com.tado.mqtt.suite.cli.Publishers -h "tcp://localhost:61613" -t "test/topic" -m "Test message" --client-count 5000 --msg-count 1 -pc --will-topic "dead/topic" --will-payload "I am dead, sorry"
+    java -cp mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar com.tado.mqtt.suite.cli.Publishers -h "tcp://localhost:1883" -t "test/topic" -m "Test message" --client-count 5000 --msg-count 1 -pc --will-topic "dead/topic" --will-payload "I am dead, sorry"
 
 ### Subscriber
 The subscriber is capable to subscribe for certain topic.

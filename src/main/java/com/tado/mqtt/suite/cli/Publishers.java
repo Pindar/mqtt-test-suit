@@ -1,21 +1,35 @@
 package com.tado.mqtt.suite.cli;
 
-import com.tado.mqtt.suite.client.PublishClients;
+import com.tado.mqtt.suite.client.ClientPublishTask;
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.UTF8Buffer;
-import org.fusesource.mqtt.client.QoS;
+import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.mqtt.client.*;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.concurrent.CountDownLatch;
+
+import static org.fusesource.hawtdispatch.Dispatch.createQueue;
 
 /**
  * Created by kuceram on 19/05/14.
  */
 public class Publishers {
 
-    private final PublishClients publishClients = new PublishClients();
+    private MQTT mqtt = new MQTT();
+    private UTF8Buffer topic;
+    private Buffer body;
+    private boolean debug;
+    private boolean prefixCounter;
+    private boolean retain;
+    private QoS qos = QoS.AT_MOST_ONCE;
+    private int messageCount = 1;
+    private long sleep;
+    private int clientCount = 1;
 
     private static void displayHelpAndExit(int exitCode) {
         stdout("");
@@ -50,7 +64,7 @@ public class Publishers {
         stdout(" -v : MQTT version to use 3.1 or 3.1.1. (default: 3.1)");
         stdout(" --client-count : the number of simultaneously connected publishClients");
         stdout(" --msg-count : the number of messages to publish per client");
-        stdout(" --client-sleep : the number of milliseconds to sleep between publish operations (defaut: 0)");
+        stdout(" --client-sleep : the number of milliseconds to sleep after publish operation (defaut: 0)");
         stdout("");
         System.exit(exitCode);
     }
@@ -81,55 +95,55 @@ public class Publishers {
                 if ("--help".equals(arg)) {
                     displayHelpAndExit(0);
                 } else if ("-v".equals(arg)) {
-                    main.publishClients.getMqtt().setVersion(shift(argl));
+                    main.mqtt.setVersion(shift(argl));
                 } else if ("-h".equals(arg)) {
-                    main.publishClients.getMqtt().setHost(shift(argl));
+                    main.mqtt.setHost(shift(argl));
                 } else if ("-k".equals(arg)) {
-                    main.publishClients.getMqtt().setKeepAlive(Short.parseShort(shift(argl)));
+                    main.mqtt.setKeepAlive(Short.parseShort(shift(argl)));
                 } else if ("-c".equals(arg)) {
-                    main.publishClients.getMqtt().setCleanSession(false);
+                    main.mqtt.setCleanSession(false);
                 } else if ("-i".equals(arg)) {
-                    main.publishClients.getMqtt().setClientId(shift(argl));
+                    main.mqtt.setClientId(shift(argl));
                 } else if ("-u".equals(arg)) {
-                    main.publishClients.getMqtt().setUserName(shift(argl));
+                    main.mqtt.setUserName(shift(argl));
                 } else if ("-p".equals(arg)) {
-                    main.publishClients.getMqtt().setPassword(shift(argl));
+                    main.mqtt.setPassword(shift(argl));
                 } else if ("--will-topic".equals(arg)) {
-                    main.publishClients.getMqtt().setWillTopic(shift(argl));
+                    main.mqtt.setWillTopic(shift(argl));
                 } else if ("--will-payload".equals(arg)) {
-                    main.publishClients.getMqtt().setWillMessage(shift(argl));
+                    main.mqtt.setWillMessage(shift(argl));
                 } else if ("--will-qos".equals(arg)) {
                     int v = Integer.parseInt(shift(argl));
                     if( v > QoS.values().length ) {
                         stderr("Invalid qos value : " + v);
                         displayHelpAndExit(1);
                     }
-                    main.publishClients.getMqtt().setWillQos(QoS.values()[v]);
+                    main.mqtt.setWillQos(QoS.values()[v]);
                 } else if ("--will-retain".equals(arg)) {
-                    main.publishClients.getMqtt().setWillRetain(true);
+                    main.mqtt.setWillRetain(true);
                 } else if ("-d".equals(arg)) {
-                    main.publishClients.setDebug(true);
+                    main.debug = true;
                 } else if ("--client-count".equals(arg)) {
-                    main.publishClients.setClientCount(Integer.parseInt(shift(argl)));
+                    main.clientCount = Integer.parseInt(shift(argl));
                 } else if ("--msg-count".equals(arg)) {
-                    main.publishClients.setMessageCountPerClient(Long.parseLong(shift(argl)));
+                    main.messageCount = Integer.parseInt(shift(argl));
                 } else if ("--client-sleep".equals(arg)) {
-                    main.publishClients.setSleep(Long.parseLong(shift(argl)));
+                    main.sleep = Long.parseLong(shift(argl));
                 } else if ("-q".equals(arg)) {
                     int v = Integer.parseInt(shift(argl));
                     if( v > QoS.values().length ) {
                         stderr("Invalid qos value : " + v);
                         displayHelpAndExit(1);
                     }
-                    main.publishClients.setQos(QoS.values()[v]);
+                    main.qos = QoS.values()[v];
                 } else if ("-r".equals(arg)) {
-                    main.publishClients.setRetain(true);
+                    main.retain = true;
                 } else if ("-t".equals(arg)) {
-                    main.publishClients.setTopic(new UTF8Buffer(shift(argl)));
+                    main.topic = new UTF8Buffer(shift(argl));
                 } else if ("-m".equals(arg)) {
-                    main.publishClients.setBody(new UTF8Buffer(shift(argl)+"\n"));
+                    main.body = new UTF8Buffer(shift(argl)+"\n");
                 } else if ("-z".equals(arg)) {
-                    main.publishClients.setBody(new UTF8Buffer(""));
+                    main.body = new UTF8Buffer("");
                 } else if ("-f".equals(arg)) {
                     File file = new File(shift(argl));
                     RandomAccessFile raf = new RandomAccessFile(file, "r");
@@ -137,12 +151,12 @@ public class Publishers {
                         byte data[] = new byte[(int) raf.length()];
                         raf.seek(0);
                         raf.readFully(data);
-                        main.publishClients.setBody(new Buffer(data));
+                        main.body = new Buffer(data);
                     } finally {
                         raf.close();
                     }
                 } else if ("-pc".equals(arg)) {
-                    main.publishClients.setPrefixCounter(true);
+                    main.prefixCounter = true;
                 } else {
                     stderr("Invalid usage: unknown option: " + arg);
                     displayHelpAndExit(1);
@@ -153,11 +167,11 @@ public class Publishers {
             }
         }
 
-        if (main.publishClients.getTopic() == null) {
+        if (main.topic == null) {
             stderr("Invalid usage: no topic specified.");
             displayHelpAndExit(1);
         }
-        if (main.publishClients.getBody() == null) {
+        if (main.body == null) {
             stderr("Invalid usage: -z -m or -f must be specified.");
             displayHelpAndExit(1);
         }
@@ -167,17 +181,76 @@ public class Publishers {
     }
 
     private void execute() {
+        // each client has its own thread and each message is sent in a sepparate thread
+        final CountDownLatch done = new CountDownLatch(clientCount * messageCount);
+        DispatchQueue queue = createQueue("mqtt clients queue");
+        final ArrayList<ClientPublishTask> clients = new ArrayList<ClientPublishTask>();
+
         // Handle a Ctrl-C event cleanly.
         Runtime.getRuntime().addShutdownHook(new Thread(){
             @Override
             public void run() {
                 stdout("");
                 stdout("MQTT publishClients shutdown...");
-                publishClients.interrupt();
+                for(ClientPublishTask client : clients)
+                    client.interrupt(new Callback<Void>() {
+                        @Override
+                        public void onSuccess(Void value) {
+                        }
+
+                        @Override
+                        public void onFailure(Throwable value) {
+                        }
+                    });
             }
         });
 
-        // execute client calls
-        publishClients.execute();
+        // create clients and send the messages
+        for (int i=0; i<clientCount; i++) {
+            ClientPublishTask clientPublishTask = new ClientPublishTask(mqtt);
+
+            // set client options
+            clientPublishTask.setTopic(topic);
+            clientPublishTask.setBody(body);
+            clientPublishTask.setDebug(debug);
+            clientPublishTask.setPrefixCounter(prefixCounter);
+            clientPublishTask.setRetain(retain);
+            clientPublishTask.setQos(qos);
+            clientPublishTask.setMessageCount(messageCount);
+            clientPublishTask.setSleep(sleep);
+            clientPublishTask.setClientId(Integer.toString(i));
+            clientPublishTask.setPublishCallback(new Callback<Void>() {
+                @Override
+                public void onSuccess(Void value) {
+                    done.countDown();
+                }
+
+                @Override
+                public void onFailure(Throwable value) {
+                    done.countDown();
+                }
+            });
+            clientPublishTask.setConnectionCallback(new Callback<Void>() {
+                @Override
+                public void onSuccess(Void value) {
+                }
+
+                @Override
+                public void onFailure(Throwable value) {
+                    for(int i=0; i<messageCount; i++) {
+                        done.countDown(); // discount all client messages if any failure
+                    }
+                }
+            });
+
+            // add client to the queue
+            queue.execute(clientPublishTask);
+        }
+
+        try {
+            done.await();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
