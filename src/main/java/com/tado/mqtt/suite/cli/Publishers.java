@@ -89,7 +89,10 @@ public class Publishers {
         stdout("------------------------------------------");
         stdout("Messages successfully sent: " + messagesSent.toString());
         stdout("Total time elapsed: " + PeriodFormat.getDefault().print(executionTime));
-        stdout("Message rate: " + (messagesSent.get() / executionTime.toStandardSeconds().getSeconds()) + " msg/sec");
+        if (executionTime.toStandardSeconds().getSeconds() > 0)
+            stdout("Message rate: " + (messagesSent.get() / executionTime.toStandardSeconds().getSeconds()) + " msg/sec");
+        else
+            stdout("Message rate: " + messagesSent.get() + " msg/sec");
         stdout("------------------------------------------");
         stdout("Clients could not connect (failure): " + errorConnections.toString());
         stdout("Messages could not publish (failure): " + errorMessages.toString());
