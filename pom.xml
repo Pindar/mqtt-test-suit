@@ -6,7 +6,7 @@
 
   <groupId>com.tado.mqtt-test-suite</groupId>
   <artifactId>mqtt-test-suite</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>0.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${project.artifactId}</name>
