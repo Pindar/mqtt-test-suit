@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ip=54.195.155.211
+ip=11.22.33.44
 port=1883
 jar=../target/mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar
 topic="test/topic"
