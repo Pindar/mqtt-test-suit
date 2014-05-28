@@ -49,7 +49,7 @@ public class Publishers {
         stdout("");
         stdout("This is a simple mqtt client that will publish to a topic.");
         stdout("");
-        stdout("Arguments: [-h host] [-k keepalive] [-c] [-i id] [-u username [-p password]]");
+        stdout("Arguments: [-h host] [-k keepalive] [-c] [--csv] [-i id] [-u username [-p password]]");
         stdout("           [--will-topic topic [--will-payload payload] [--will-qos qos] [--will-retain]]");
         stdout("           [--client-count count] [--msg-count count] [--client-sleep sleep]");
         stdout("           [-d] [-q qos] [-r] -t topic ( -pc | -m message | -z | -f file )");
@@ -58,6 +58,7 @@ public class Publishers {
         stdout(" -h : mqtt host uri to connect to. Defaults to tcp://localhost:1883.");
         stdout(" -k : keep alive in seconds for this client. Defaults to 60.");
         stdout(" -c : disable 'clean session'.");
+        stdout(" --csv : print results in csv row format.");
         stdout(" -i : id to use for this client. Defaults to a random id.");
         stdout(" -u : provide a username (requires MQTT 3.1 broker)");
         stdout(" -p : provide a password (requires MQTT 3.1 broker)");
@@ -105,8 +106,12 @@ public class Publishers {
     }
 
     private void displayStatisticsAsCSV() {
-        String executionTime = PeriodFormat.getDefault().print(calculateExecutionTime());
-        stdout(clientCount + ", " + messagesSent + ", " + executionTime + ", " + errorConnections + ", "  + ", " + errorMessages + ", " + FileUtils.byteCountToDisplaySize(size.get()));
+        Period executionTime = calculateExecutionTime();
+        String executionTimeFormatted = PeriodFormat.getDefault().print(executionTime);
+        stdout(clientCount + "," + messagesSent + "," +
+            (executionTime.toStandardSeconds().getSeconds()*1000 + executionTime.getMillis()) + "," +
+            executionTimeFormatted + "," + errorConnections + "," + errorMessages + "," +
+            FileUtils.byteCountToDisplaySize(size.get()));
     }
 
     private Period calculateExecutionTime() {
@@ -134,8 +139,8 @@ public class Publishers {
         // Process the arguments
         LinkedList<String> argl = new LinkedList<String>(Arrays.asList(args));
         while (!argl.isEmpty()) {
+            String arg = argl.removeFirst();
             try {
-                String arg = argl.removeFirst();
                 if ("--help".equals(arg)) {
                     displayHelpAndExit(0);
                 } else if ("-v".equals(arg)) {
@@ -208,7 +213,7 @@ public class Publishers {
                     displayHelpAndExit(1);
                 }
             } catch (NumberFormatException e) {
-                stderr("Invalid usage: argument not a number");
+                stderr("Invalid usage: argument " + arg + " not a number");
                 displayHelpAndExit(1);
             }
         }
@@ -238,8 +243,10 @@ public class Publishers {
         Runtime.getRuntime().addShutdownHook(new Thread(){
             @Override
             public void run() {
-                stdout("");
-                stdout("MQTT publishClients shutdown...");
+                if (!csv) {
+                    stdout("");
+                    stdout("MQTT publishClients shutdown...");
+                }
 
                 final CountDownLatch clientClosed = new CountDownLatch(clients.size());
                 for(ClientPublishTask client : clients) {
