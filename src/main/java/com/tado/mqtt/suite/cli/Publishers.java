@@ -36,12 +36,14 @@ public class Publishers {
     private int messageCount = 1;
     private long sleep;
     private int clientCount = 1;
+    private boolean csv = false;
 
     private AtomicInteger messagesSent = new AtomicInteger(0);
     private AtomicInteger errorMessages = new AtomicInteger(0);
     private AtomicInteger errorConnections = new AtomicInteger(0);
     private AtomicLong size = new AtomicLong(0);
     private long startTimeNanosec;
+    private long endTimeNanosec;
 
     private static void displayHelpAndExit(int exitCode) {
         stdout("");
@@ -82,7 +84,7 @@ public class Publishers {
     }
 
     private void displayStatistics() {
-        Period executionTime = new Period(startTimeNanosec/1000000, System.nanoTime()/1000000);
+        Period executionTime = calculateExecutionTime();
         stdout("");
         stdout("------------------------------------------");
         stdout("Statistic of Publishers");
@@ -100,6 +102,15 @@ public class Publishers {
         stdout("Total data sent: " + FileUtils.byteCountToDisplaySize(size.get()));
         stdout("------------------------------------------");
         stdout("");
+    }
+
+    private void displayStatisticsAsCSV() {
+        String executionTime = PeriodFormat.getDefault().print(calculateExecutionTime());
+        stdout(clientCount + ", " + messagesSent + ", " + executionTime + ", " + errorConnections + ", "  + ", " + errorMessages + ", " + FileUtils.byteCountToDisplaySize(size.get()));
+    }
+
+    private Period calculateExecutionTime() {
+        return new Period(startTimeNanosec/1000000, endTimeNanosec/1000000);
     }
 
     private static void stdout(Object x) {
@@ -190,6 +201,8 @@ public class Publishers {
                     }
                 } else if ("-pc".equals(arg)) {
                     main.prefixCounter = true;
+                } else if ("--csv".equals(arg)) {
+                    main.csv = true;
                 } else {
                     stderr("Invalid usage: unknown option: " + arg);
                     displayHelpAndExit(1);
@@ -252,7 +265,12 @@ public class Publishers {
                     e.printStackTrace();
                 }
 
-                displayStatistics();
+                endTimeNanosec = System.nanoTime();
+                if (csv) {
+                    displayStatisticsAsCSV();
+                } else {
+                    displayStatistics();
+                }
             }
         });
 
@@ -275,7 +293,7 @@ public class Publishers {
                 @Override
                 public void onSuccess(Integer messageSize) {
                     messagesSent.incrementAndGet();
-                    size.addAndGet(new Long(messageSize));
+                    size.addAndGet((long) messageSize);
                     done.countDown();
                 }
 
