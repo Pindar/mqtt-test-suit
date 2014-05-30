@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Feasibility test which simulates the real situation: many clients (500) publishing messages (count 45)
+# Feasibility test which simulates the real situation: many clients (5000) publishing messages (count 45)
 # in 20 sec interval. Therefore, the minimal time of the test is 15 min.
 
 ip=11.22.33.44
@@ -9,7 +9,7 @@ jar=../target/mqtt-test-suite-0.3-SNAPSHOT-jar-with-dependencies.jar
 topic="test/topic"
 message="Test message"
 msgCount=45
-clientCount=500
+clientCount=5000
 sleep=20000
 
 control_c()
