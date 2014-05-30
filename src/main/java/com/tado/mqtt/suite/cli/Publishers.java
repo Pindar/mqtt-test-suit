@@ -237,7 +237,7 @@ public class Publishers {
         // each client has its own thread and each message is sent in a separate thread
         final CountDownLatch done = new CountDownLatch(clientCount * messageCount);
         DispatchQueue queue = createQueue("mqtt clients queue");
-        final ArrayList<ClientPublishTask> clients = new ArrayList<ClientPublishTask>();
+//        final ArrayList<ClientPublishTask> clients = new ArrayList<ClientPublishTask>();
 
         // Handle a Ctrl-C event cleanly.
         Runtime.getRuntime().addShutdownHook(new Thread(){
@@ -248,29 +248,30 @@ public class Publishers {
                     stdout("MQTT publishClients shutdown...");
                 }
 
-                final CountDownLatch clientClosed = new CountDownLatch(clients.size());
-                for(ClientPublishTask client : clients) {
-                    client.interrupt(new Callback<Void>() {
-                        @Override
-                        public void onSuccess(Void value) {
-                            clientClosed.countDown();
-                            if(debug)
-                                stdout("Connection to broker successfully closed");
-                        }
-
-                        @Override
-                        public void onFailure(Throwable value) {
-                            clientClosed.countDown();
-                            stderr("Connection close to broker failure!");
-                        }
-                    });
-                }
-
-                try {
-                    clientClosed.await(5000, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                // holding the reference for all clients explode java heap-size
+//                final CountDownLatch clientClosed = new CountDownLatch(clients.size());
+//                for(ClientPublishTask client : clients) {
+//                    client.interrupt(new Callback<Void>() {
+//                        @Override
+//                        public void onSuccess(Void value) {
+//                            clientClosed.countDown();
+//                            if(debug)
+//                                stdout("Connection to broker successfully closed");
+//                        }
+//
+//                        @Override
+//                        public void onFailure(Throwable value) {
+//                            clientClosed.countDown();
+//                            stderr("Connection close to broker failure!");
+//                        }
+//                    });
+//                }
+//
+//                try {
+//                    clientClosed.await(5000, TimeUnit.MILLISECONDS);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
 
                 endTimeNanosec = System.nanoTime();
                 if (csv) {
@@ -284,7 +285,7 @@ public class Publishers {
         // create clients and send the messages
         for (int i=0; i<clientCount; i++) {
             ClientPublishTask clientPublishTask = new ClientPublishTask(mqtt);
-            clients.add(clientPublishTask);
+//            clients.add(clientPublishTask);
 
             // set client options
             clientPublishTask.setTopic(topic);
