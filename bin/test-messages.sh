@@ -24,9 +24,18 @@ control_c()
 # trap keyboard interrupt (control-c)
 trap control_c SIGINT
 
+warmMsg=100
+warmClients=1000
+echo "Warming up the broker, sent ${warmMsg} messages with ${warmClients} clients"
+java -Xmx1g -cp ${jar} "com.tado.mqtt.suite.cli.Publishers" \
+            -h "tcp://$ip:$port" -t "$topic" -m "$message" --msg-count ${warmMsg} -pc --csv \
+            --client-count ${warmClients}
+
 for i in ${msgCount[@]}
 do
         java -Xmx1g -cp ${jar} "com.tado.mqtt.suite.cli.Publishers" \
             -h "tcp://$ip:$port" -t "$topic" -m "$message" --msg-count ${i} -pc --csv \
             --client-count ${clientCount}
 done
+
+echo "\n*** Test messages finished ***\n"
