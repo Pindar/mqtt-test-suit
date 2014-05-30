@@ -108,7 +108,7 @@ public class Publishers {
     private void displayStatisticsAsCSV() {
         Period executionTime = calculateExecutionTime();
         String executionTimeFormatted = PeriodFormat.getDefault().print(executionTime);
-        stdout(clientCount + "," + messagesSent + "," +
+        stdout(clientCount + "," + messageCount + "," + messagesSent + "," +
             (executionTime.toStandardSeconds().getSeconds()*1000 + executionTime.getMillis()) + "," +
             executionTimeFormatted + "," + errorConnections + "," + errorMessages + "," +
             FileUtils.byteCountToDisplaySize(size.get()));
