@@ -1,14 +1,16 @@
 #!/bin/bash
 
-ip=54.195.155.211
+ip=11.22.33.44
 port=1883
 jar=../target/mqtt-test-suite-0.1-SNAPSHOT-jar-with-dependencies.jar
 topic="test/topic"
 message="Test message"
 msgCount=10
-clientCount=(1 10 50 100 200 500 1000 2000 5000 10000)
-
-#exited=false
+clientCount=(
+    1 10 50 100 200 500 1000 2000 5000 10000 20000 30000 40000 50000
+    1 10 50 100 200 500 1000 2000 5000 10000 20000 30000 40000 50000
+    1 10 50 100 200 500 1000 2000 5000 10000 20000 30000 40000 50000
+)
 
 control_c()
 # run if user hits control-c
