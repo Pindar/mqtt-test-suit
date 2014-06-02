@@ -1,9 +1,9 @@
 package com.tado.mqtt.suite.client;
 
+import com.tado.mqtt.suite.values.Configuration;
 import org.fusesource.hawtbuf.AsciiBuffer;
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.ByteArrayOutputStream;
-import org.fusesource.hawtbuf.UTF8Buffer;
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.Task;
 import org.fusesource.mqtt.client.*;
@@ -19,23 +19,18 @@ public class ClientPublishTask extends Task {
 
     private MQTT mqtt;
     private String clientId;
-    private UTF8Buffer topic;
-    private Buffer body;
-    private boolean debug;
-    private boolean prefixCounter;
-    private boolean retain;
     private QoS qos = QoS.AT_MOST_ONCE;
-    private int messageCount = 1;
-    private long sleep = 0;
     private Callback<Integer> publishCallback;
     private Callback<Void> connectionCallback;
     private final CallbackConnection connection;
+    private Configuration configuration;
 
-    private boolean interruped = false;
+    private boolean interrupted = false;
 
-    public ClientPublishTask(MQTT mqtt) {
-        this.mqtt = new MQTT(mqtt);
-        this.connection = mqtt.callbackConnection();
+    public ClientPublishTask(Configuration config) {
+        this.mqtt = new MQTT(config.getMqtt());
+        this.connection = config.getMqtt().callbackConnection();
+        configuration = config;
     }
 
     public MQTT getMqtt() {
@@ -46,85 +41,10 @@ public class ClientPublishTask extends Task {
         this.mqtt = mqtt;
     }
 
-    public String getClientId() {
-        return clientId;
-    }
-
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
 
-    public UTF8Buffer getTopic() {
-        return topic;
-    }
-
-    public void setTopic(UTF8Buffer topic) {
-        this.topic = topic;
-    }
-
-    public Buffer getBody() {
-        return body;
-    }
-
-    public void setBody(Buffer body) {
-        this.body = body;
-    }
-
-    public boolean isDebug() {
-        return debug;
-    }
-
-    public void setDebug(boolean debug) {
-        this.debug = debug;
-    }
-
-    public boolean isPrefixCounter() {
-        return prefixCounter;
-    }
-
-    public void setPrefixCounter(boolean prefixCounter) {
-        this.prefixCounter = prefixCounter;
-    }
-
-    public boolean isRetain() {
-        return retain;
-    }
-
-    public void setRetain(boolean retain) {
-        this.retain = retain;
-    }
-
-    public QoS getQos() {
-        return qos;
-    }
-
-    public void setQos(QoS qos) {
-        this.qos = qos;
-    }
-
-    public long getMessageCount() {
-        return messageCount;
-    }
-
-    public void setMessageCount(int messageCount) {
-        this.messageCount = messageCount;
-    }
-
-    public long getSleep() {
-        return sleep;
-    }
-
-    public void setSleep(long sleep) {
-        this.sleep = sleep;
-    }
-
-    public Callback<Integer> getPublishCallback() {
-        return publishCallback;
-    }
-
-    public Callback<Void> getConnectionCallback() {
-        return connectionCallback;
-    }
 
     public void setConnectionCallback(Callback<Void> connectionCallback) {
         this.connectionCallback = connectionCallback;
@@ -139,37 +59,37 @@ public class ClientPublishTask extends Task {
         // connect
         connection.connect(new Callback<Void>() {
             public void onSuccess(Void value) {
-                if (debug) {
+                if (configuration.isDebug()) {
                     System.out.println(String.format("[client %s] connected", clientId));
                 }
                 connectionCallback.onSuccess(null);
                 // send messages
                 DispatchQueue queue = createQueue("mqtt client message queue");
-                for (int i=0; i<messageCount; i++) {
+                for (int i = 0; i < configuration.getMessageCount(); i++) {
                     final int messagePosition = i;
 
                     Task sendMessageTask = new Task() {
                         @Override
                         public void run() {
-                            if (!interruped) {
+                            if (!interrupted) {
                                 final int messageSize;
-                                Buffer message = body;
+                                Buffer message = configuration.getBody();
 
-                                if (debug) {
+                                if (configuration.isDebug()) {
                                     System.out.println(String.format("[client %s] publish message id %d - start", clientId, messagePosition));
                                 }
-                                if (prefixCounter) {
+                                if (configuration.isPrefixCounter()) {
                                     ByteArrayOutputStream os = new ByteArrayOutputStream(message.length + 15);
                                     os.write(new AsciiBuffer(String.format("[client %s]", clientId)));
                                     os.write(new AsciiBuffer(String.format("[msg id %d]", messagePosition)));
                                     os.write(':');
-                                    os.write(body);
+                                    os.write(configuration.getBody());
                                     message = os.toBuffer();
                                 }
                                 messageSize = message.length;
-                                connection.publish(topic, message, qos, retain, new Callback<Void>() {
+                                connection.publish(configuration.getTopic(), message, qos, configuration.isRetain(), new Callback<Void>() {
                                     public void onSuccess(Void value) {
-                                        if (debug) {
+                                        if (configuration.isDebug()) {
                                             System.out.println(String.format("[client %s] publish message id %d - sent", clientId, messagePosition));
                                         }
                                         publishCallback.onSuccess(messageSize);
@@ -177,7 +97,7 @@ public class ClientPublishTask extends Task {
 
                                     public void onFailure(Throwable value) {
                                         System.out.println(String.format("[client %s] publish failed: %s", clientId, value.toString()));
-                                        if (debug) {
+                                        if (configuration.isDebug()) {
                                             value.printStackTrace();
                                         }
                                         publishCallback.onFailure(value);
@@ -187,20 +107,21 @@ public class ClientPublishTask extends Task {
                         }
                     };
 
-                    if (sleep > 0) {
-                        if(debug) {
-                            System.out.println(String.format("[client %s] sleeping for %d ms", clientId, sleep));
+                    if (configuration.getSleep() > 0) {
+                        if (configuration.isDebug()) {
+                            System.out.println(String.format("[client %s] sleeping for %d ms", clientId, configuration.getSleep()));
                         }
-                        queue.executeAfter(sleep, TimeUnit.MILLISECONDS, sendMessageTask);
+                        queue.executeAfter(configuration.getSleep(), TimeUnit.MILLISECONDS, sendMessageTask);
                     } else {
                         queue.execute(sendMessageTask);
                     }
                 }
             }
+
             public void onFailure(Throwable value) {
                 System.out.println(String.format("[client %s] connection failure", clientId));
-                if (debug) {
-                    System.out.println(value);
+                if (configuration.isDebug()) {
+                    value.printStackTrace();
                 }
                 connectionCallback.onFailure(value);
             }
@@ -208,7 +129,7 @@ public class ClientPublishTask extends Task {
     }
 
     public void interrupt(Callback<Void> callback) {
-        interruped = true;
+        interrupted = true;
         connection.disconnect(callback);
     }
 }
