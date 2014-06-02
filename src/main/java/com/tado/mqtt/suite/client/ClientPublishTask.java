@@ -1,6 +1,7 @@
 package com.tado.mqtt.suite.client;
 
 import com.tado.mqtt.suite.values.Configuration;
+import com.tado.mqtt.suite.view.CommandLindInterface;
 import org.fusesource.hawtbuf.AsciiBuffer;
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.ByteArrayOutputStream;
@@ -10,6 +11,7 @@ import org.fusesource.mqtt.client.*;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.tado.mqtt.suite.view.CommandLindInterface.*;
 import static org.fusesource.hawtdispatch.Dispatch.createQueue;
 
 /**
@@ -19,7 +21,6 @@ public class ClientPublishTask extends Task {
 
     private MQTT mqtt;
     private String clientId;
-    private QoS qos = QoS.AT_MOST_ONCE;
     private Callback<Integer> publishCallback;
     private Callback<Void> connectionCallback;
     private final CallbackConnection connection;
@@ -59,9 +60,9 @@ public class ClientPublishTask extends Task {
         // connect
         connection.connect(new Callback<Void>() {
             public void onSuccess(Void value) {
-                if (configuration.isDebug()) {
-                    System.out.println(String.format("[client %s] connected", clientId));
-                }
+
+                debug(configuration, String.format("[client %s] connected", clientId));
+
                 connectionCallback.onSuccess(null);
                 // send messages
                 DispatchQueue queue = createQueue("mqtt client message queue");
@@ -75,9 +76,9 @@ public class ClientPublishTask extends Task {
                                 final int messageSize;
                                 Buffer message = configuration.getBody();
 
-                                if (configuration.isDebug()) {
-                                    System.out.println(String.format("[client %s] publish message id %d - start", clientId, messagePosition));
-                                }
+
+                                debug(configuration, String.format("[client %s] publish message id %d - start", clientId, messagePosition));
+
                                 if (configuration.isPrefixCounter()) {
                                     ByteArrayOutputStream os = new ByteArrayOutputStream(message.length + 15);
                                     os.write(new AsciiBuffer(String.format("[client %s]", clientId)));
@@ -87,11 +88,11 @@ public class ClientPublishTask extends Task {
                                     message = os.toBuffer();
                                 }
                                 messageSize = message.length;
-                                connection.publish(configuration.getTopic(), message, qos, configuration.isRetain(), new Callback<Void>() {
+                                connection.publish(configuration.getTopic(), message, configuration.getQos(), configuration.isRetain(), new Callback<Void>() {
                                     public void onSuccess(Void value) {
-                                        if (configuration.isDebug()) {
-                                            System.out.println(String.format("[client %s] publish message id %d - sent", clientId, messagePosition));
-                                        }
+
+                                        debug(configuration, String.format("[client %s] publish message id %d - sent", clientId, messagePosition));
+
                                         publishCallback.onSuccess(messageSize);
                                     }
 
@@ -108,9 +109,9 @@ public class ClientPublishTask extends Task {
                     };
 
                     if (configuration.getSleep() > 0) {
-                        Long actualSleep = configuration.getSleep()*(i+1);
-                        if(configuration.isDebug()) {
-                            System.out.println(String.format("[client %s] [message %d] will sleep for %d ms", clientId, i, actualSleep));
+                        Long actualSleep = configuration.getSleep() * (i + 1);
+                        if (configuration.isDebug()) {
+                            stdout(String.format("[client %s] [message %d] will sleep for %d ms", clientId, i, actualSleep));
                         }
                         queue.executeAfter(actualSleep, TimeUnit.MILLISECONDS, sendMessageTask);
                     } else {
@@ -120,7 +121,7 @@ public class ClientPublishTask extends Task {
             }
 
             public void onFailure(Throwable value) {
-                System.out.println(String.format("[client %s] connection failure", clientId));
+                stdout(String.format("[client %s] connection failure", clientId));
                 if (configuration.isDebug()) {
                     value.printStackTrace();
                 }

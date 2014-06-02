@@ -6,6 +6,8 @@ import org.apache.commons.io.FileUtils;
 import org.joda.time.Period;
 import org.joda.time.format.PeriodFormat;
 
+import static com.tado.mqtt.suite.view.CommandLindInterface.*;
+
 /**
  * Created by simon on 30/05/14.
  */
@@ -15,7 +17,8 @@ public class CommaSeparatedValues implements Notification {
     public void display(Configuration configuration, Result result) {
         Period executionTime = result.calculateExecutionTime();
         String executionTimeFormatted = PeriodFormat.getDefault().print(executionTime);
-        CommandLindInterface.stdout(configuration.getClientCount() + "," + result.messagesSent + "," +
+
+        stdout(configuration.getClientCount() + "," + configuration.getMessageCount() + "," + result.messagesSent + "," +
                 (executionTime.toStandardSeconds().getSeconds() * 1000 + executionTime.getMillis()) + "," +
                 executionTimeFormatted + "," + result.errorConnections + "," + result.errorMessages + "," +
                 FileUtils.byteCountToDisplaySize(result.size.get()));

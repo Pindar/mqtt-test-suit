@@ -43,28 +43,60 @@ public class Configuration {
 
         }
 
-        public Builder mqtt(MQTT val)
-        { mqtt = val;      return this; }
-        public Builder topic(UTF8Buffer val)
-        { topic = val;           return this; }
-        public Builder body(Buffer val)
-        { body = val;  return this; }
-        public Builder debug(boolean val)
-        { debug = val;        return this; }
-        public Builder prefixCounter(boolean val)
-        { prefixCounter = val;        return this; }
-        public Builder retain(boolean val)
-        { retain = val;        return this; }
-        public Builder messageCount(int val)
-        { messageCount = val;        return this; }
-        public Builder sleep(long val)
-        { sleep = val;        return this; }
-        public Builder clientCount(int val)
-        { clientCount = val;        return this; }
-        public Builder csv(boolean val)
-        { csv = val;        return this; }
-        public Builder qos(QoS val)
-        { qos = val;        return this; }
+        public Builder mqtt(MQTT val) {
+            mqtt = val;
+            return this;
+        }
+
+        public Builder topic(UTF8Buffer val) {
+            topic = val;
+            return this;
+        }
+
+        public Builder body(Buffer val) {
+            body = val;
+            return this;
+        }
+
+        public Builder debug(boolean val) {
+            debug = val;
+            return this;
+        }
+
+        public Builder prefixCounter(boolean val) {
+            prefixCounter = val;
+            return this;
+        }
+
+        public Builder retain(boolean val) {
+            retain = val;
+            return this;
+        }
+
+        public Builder messageCount(int val) {
+            messageCount = val;
+            return this;
+        }
+
+        public Builder sleep(long val) {
+            sleep = val;
+            return this;
+        }
+
+        public Builder clientCount(int val) {
+            clientCount = val;
+            return this;
+        }
+
+        public Builder csv(boolean val) {
+            csv = val;
+            return this;
+        }
+
+        public Builder qos(QoS val) {
+            qos = val;
+            return this;
+        }
 
         public Configuration build() {
             return new Configuration(this);

@@ -59,14 +59,14 @@ public class Publishers {
         final CountDownLatch done = configuration.getCountDownLatch();
         DispatchQueue queue = createQueue("mqtt clients queue");
 
-        final List<ClientPublishTask> clients = new ArrayList<ClientPublishTask>();
-        handleInterruption(clients);
+
+        handleInterruption();
 
 
         // create clients and send the messages
         for (int i = 0; i < configuration.getClientCount(); i++) {
             ClientPublishTask clientPublishTask = new ClientPublishTask(configuration);
-            clients.add(clientPublishTask);
+//            clients.add(clientPublishTask);
 
             // set client options
             clientPublishTask.setClientId(Integer.toString(i));
@@ -118,35 +118,36 @@ public class Publishers {
         };
     }
 
-    private void handleInterruption(final List<ClientPublishTask> clients) {
+    private void handleInterruption() {
+//        final List<ClientPublishTask> clients = new ArrayList<ClientPublishTask>();
         // Handle a Ctrl-C event cleanly.
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
                 Publishers.this.output.shutdown();
 
-                final CountDownLatch clientClosed = new CountDownLatch(clients.size());
-                for (ClientPublishTask client : clients) {
-                    client.interrupt(new Callback<Void>() {
-                        @Override
-                        public void onSuccess(Void value) {
-                            clientClosed.countDown();
-                            CommandLindInterface.debug(Publishers.this.configuration, "Connection to broker successfully closed");
-                        }
-
-                        @Override
-                        public void onFailure(Throwable value) {
-                            clientClosed.countDown();
-                            CommandLindInterface.stderr("Connection close to broker failure!");
-                        }
-                    });
-                }
-
-                try {
-                    clientClosed.await(5000, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+//                final CountDownLatch clientClosed = new CountDownLatch(clients.size());
+//                for (ClientPublishTask client : clients) {
+//                    client.interrupt(new Callback<Void>() {
+//                        @Override
+//                        public void onSuccess(Void value) {
+//                            clientClosed.countDown();
+//                            CommandLindInterface.debug(Publishers.this.configuration, "Connection to broker successfully closed");
+//                        }
+//
+//                        @Override
+//                        public void onFailure(Throwable value) {
+//                            clientClosed.countDown();
+//                            CommandLindInterface.stderr("Connection close to broker failure!");
+//                        }
+//                    });
+//                }
+//
+//                try {
+//                    clientClosed.await(5000, TimeUnit.MILLISECONDS);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
 
                 result.endTimeNanosec = System.nanoTime();
                 output.display(configuration, result);
