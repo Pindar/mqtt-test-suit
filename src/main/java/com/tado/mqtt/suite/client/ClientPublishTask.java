@@ -108,10 +108,11 @@ public class ClientPublishTask extends Task {
                     };
 
                     if (configuration.getSleep() > 0) {
-                        if (configuration.isDebug()) {
-                            System.out.println(String.format("[client %s] sleeping for %d ms", clientId, configuration.getSleep()));
+                        Long actualSleep = configuration.getSleep()*(i+1);
+                        if(configuration.isDebug()) {
+                            System.out.println(String.format("[client %s] [message %d] will sleep for %d ms", clientId, i, actualSleep));
                         }
-                        queue.executeAfter(configuration.getSleep(), TimeUnit.MILLISECONDS, sendMessageTask);
+                        queue.executeAfter(actualSleep, TimeUnit.MILLISECONDS, sendMessageTask);
                     } else {
                         queue.execute(sendMessageTask);
                     }
